@@ -105,6 +105,10 @@ class Asset(db.Model):
         except Exception as e:
             print(f"Unable to upload image due to {e}")
 
+    def delete(self, img_filename): # filename is the salt.ext 
+        s3 = boto3.resource("s3")
+        s3.Object(S3_BUCKET, img_filename).delete()
+
 
 # must be here, before User model
 followers = db.Table("Followers",
@@ -149,6 +153,9 @@ class User(db.Model):
 
     def getUser(self, user_id):
         return User.query.filter_by(id=user_id).first()
+    
+    def getPosts(self):
+        return [p.serialize() for p in self.posts]
 
     def getFollowersUsernames(self):
         return [self.getUser(u.followerID).username for u in db.session.query(followers).filter(followers.c.followedID==self.id).all()]
@@ -170,7 +177,7 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     title = db.Column(db.String, nullable=False)
-    dateTime = db.Column(db.Integer, nullable=False) # need to change to datetime later
+    dateTime = db.Column(db.Integer, nullable=False) # need to change to DateTime later
     ingredients = db.Column(db.String, nullable=False)
     recipe = db.Column(db.String)
     recipeTime = db.Column(db.Integer, nullable=False)

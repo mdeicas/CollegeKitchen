@@ -29,7 +29,8 @@ def failure_response(message, code=404):
 ########## ROUTES ##############
 
 # uploads an image to the bucket
-@app.route("/upload_image/", methods=["POST"])
+# somehow still uploads images to the bucket even if there is an error
+@app.route("/user/image/upload/", methods=["POST"])
 def upload_image():
     body = json.loads(request.data)
     image_data = body.get("image_data")
@@ -58,12 +59,26 @@ def upload_image():
     return success_response(asset.serialize(), 201)
 
 
-@app.route("/get_image/<int:img_id>/")
+@app.route("/image/<int:img_id>/")
 def get_image(img_id):
     asset = Asset.query.filter_by(id=img_id).first()
     if asset is None:
         return failure_response("Image not found!")
     return success_response(asset.serialize(), 200)
+
+@app.route("/image/<int:img_id>/delete/", methods=["DELETE"])
+def delete_image(img_id):
+    asset = Asset.query.filter_by(id=img_id).first()
+    if asset is None:
+        return failure_response("Image not found!")
+    salt = asset.salt
+    ext = asset.extension
+    img_filename = f"{salt}.{ext}"
+    asset.delete(img_filename)
+    db.session.delete(asset)
+    db.session.commit()
+    return success_response(asset.serialize())
+    
 
 @app.route("/getUsers/")
 def getUsers():
@@ -74,24 +89,26 @@ def getUsers():
 @app.route("/user/<int:user_id>/")
 def get_User(user_id):
     user = User.query.filter_by(id=user_id).first()
-    # if user is None:
-    #    return failure_response("User cannot be found!")
+    if user is None:
+        return failure_response("User cannot be found!")
     return success_response(user.serialize(), 200)
 
 
 @app.route("/register/", methods=["POST"])
 def register():
 
-    # case user already exists
-    # case username is already taken
-    # case course is not created for whatever reason, possibly incorrect request data
-
     body = json.loads(request.data)
-    user = User(
-        username=body.get("username"),
-        password=body.get("password"),
-        bio=body.get("bio", ""),
-    )
+    username = body.get("username")
+    password = body.get("password")
+    bio = body.get("bio", "")
+    temp_user = User.query.filter_by(username=username).first()
+    if username is None or password is None:
+        return failure_response("No username or password!")
+    if temp_user.username == username: # cases user already registered or name taken
+        if temp_user.password == password and temp_user.bio == bio:
+            return failure_response("User already registered!")
+        return failure_response("Username already taken!")
+    user = User(username=username, password=password, bio=bio)
     db.session.add(user)
     db.session.commit()
     return success_response(user.serialize(), 200)
@@ -100,11 +117,16 @@ def register():
 @app.route("/user/<int:follower_user_id>/follow/", methods=["POST"])
 def follow(follower_user_id):
 
-    # case either user does not exist
-    # case follower id = follower id
-    # db handles case where relationship already exists, does not return error message though
-
+    user = User.query.filter_by(id=follower_user_id).first()
     followed_user_id = json.loads(request.data).get("followed_user_id")
+    followed_user = User.query.filter_by(id=followed_user_id).first()
+    # case either user does not exist
+    if user is None or followed_user is None:
+        return failure_response("User cannot be found!")
+    # case follower id = follower id
+    if follower_user_id == followed_user_id:
+        return failure_response("User and follower ids are the same!")
+    # db handles case where relationship already exists, does not return error message though
 
     follower_user = User.query.filter_by(id=follower_user_id).first()
     follower_user.follow(followed_user_id)
@@ -116,11 +138,16 @@ def follow(follower_user_id):
 @app.route("/user/<int:follower_user_id>/unfollow/", methods=["POST"])
 def unfollow(follower_user_id):
 
-    # case either user does not exist
-    # case follower id = follower id
-    # db handles case where relationship already exists, does not return error message though
-
+    user = User.query.filter_by(id=follower_user_id).first()
     followed_user_id = json.loads(request.data).get("followed_user_id")
+    followed_user = User.query.filter_by(id=followed_user_id).first()
+    # case either user does not exist
+    if user is None or followed_user is None:
+        return failure_response("User cannot be found!")
+    # case follower id = follower id
+    if follower_user_id == followed_user_id:
+        return failure_response("User and follower ids are the same!")
+    # db handles case where relationship already exists, does not return error message though
 
     follower_user = User.query.filter_by(id=follower_user_id).first()
     follower_user.unfollow(followed_user_id)
@@ -133,8 +160,10 @@ def unfollow(follower_user_id):
 def post(user_id):
 
     # case user does not exist
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return failure_response("User cannot be found!")
     # case post was not creeated for whatever reason, possibly because of incorrect request data
-
     # still need to fix dateTime functionality, time functionality (only accepts ints rn)
 
     body = json.loads(request.data)
@@ -161,7 +190,22 @@ def post(user_id):
     return success_response(post.serialize(), 200)
 
 # get post by post id
+@app.route("/post/<int:post_id>/")
+def getPost(post_id):
+    post = Post.query.filter_by(id=post_id).first()
+    if post is None:
+        return failure_response("Post does not exist!")
+    return success_response(post.serialize(), 200)
+
+
 # get posts by user id
+@app.route("/user/<int:user_id>/posts/")
+def getPostsByUser(user_id):
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return failure_response("User does not exist!")
+    return success_response(user.getPosts(), 200)
+
 # delete post
 # rate post difficulty (we need a way to make sure than each user can only rate each post once)
 # rate post overall (we need a way to make sure than each user can only rate each post once
