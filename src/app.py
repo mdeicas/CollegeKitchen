@@ -1,6 +1,7 @@
 import json
 
 from db import db
+import dao
 from flask import Flask
 from flask import request
 from db import Asset, User, Post, Comment, Tag
@@ -21,7 +22,6 @@ with app.app_context():
 ########## HELPER FUNCTIONS #############
 def success_response(data, code=200):
     return json.dumps({"success": True, "data": data}), code
-
 
 def failure_response(message, code=404):
     return json.dumps({"success": False, "error": message}), code
@@ -82,16 +82,18 @@ def delete_image(img_id):
 
 @app.route("/getUsers/")
 def getUsers():
-    users = [u.serialize() for u in User.query.all()]
-    return success_response(users, 200)
+    #users = [u.serialize() for u in User.query.all()]
+    #return success_response(users, 200)
+    return success_response(dao.getUsers())
 
 
 @app.route("/user/<int:user_id>/")
-def get_User(user_id):
-    user = User.query.filter_by(id=user_id).first()
+def getUser(user_id):
+    #user = User.query.filter_by(id=user_id).first()
+    user = dao.getUser(user_id)
     if user is None:
         return failure_response("User cannot be found!")
-    return success_response(user.serialize(), 200)
+    return success_response(user, 200)
 
 
 @app.route("/register/", methods=["POST"])
@@ -99,114 +101,116 @@ def register():
 
     body = json.loads(request.data)
     username = body.get("username")
+    
     password = body.get("password")
-    bio = body.get("bio", "")
-    temp_user = User.query.filter_by(username=username).first()
     if username is None or password is None:
         return failure_response("No username or password!")
-    if temp_user.username == username: # cases user already registered or name taken
-        if temp_user.password == password and temp_user.bio == bio:
+
+    bio = body.get("bio", "")
+    temp_user = dao.getUserByUsername(username=username)
+    if temp_user is not None: #if user is not None, then username already exists so no need to check if username-of-temp_user == username 
+        if temp_user.get("bio") == bio:
             return failure_response("User already registered!")
         return failure_response("Username already taken!")
-    user = User(username=username, password=password, bio=bio)
-    db.session.add(user)
-    db.session.commit()
-    return success_response(user.serialize(), 200)
-
+    
+    user = dao.register(username=username, password=password, bio=bio)
+    #user = User(username=username, password=password, bio=bio)
+    if user is None:
+        return failure_response("The server could not create the user!")
+    return success_response(user, 200)
 
 @app.route("/user/<int:follower_user_id>/follow/", methods=["POST"])
 def follow(follower_user_id):
+    #no error if relationship already exists
 
-    user = User.query.filter_by(id=follower_user_id).first()
     followed_user_id = json.loads(request.data).get("followed_user_id")
-    followed_user = User.query.filter_by(id=followed_user_id).first()
-    # case either user does not exist
-    if user is None or followed_user is None:
-        return failure_response("User cannot be found!")
-    # case follower id = follower id
+    
     if follower_user_id == followed_user_id:
         return failure_response("User and follower ids are the same!")
-    # db handles case where relationship already exists, does not return error message though
+    if dao.getUser(follower_user_id) is None or dao.getUser(followed_user_id) is None:
+        return failure_response("One or both of those users cannot be found!")
+    
+    follower = dao.follow(follower_user_id=follower_user_id, followed_user_id=followed_user_id)
+   
+    if follower is None:
+        return failure_response("The user was not able to be followed!")
 
-    follower_user = User.query.filter_by(id=follower_user_id).first()
-    follower_user.follow(followed_user_id)
-    db.session.commit()
-
-    return success_response(follower_user.serialize())
-
+    return success_response(follower)
 
 @app.route("/user/<int:follower_user_id>/unfollow/", methods=["POST"])
 def unfollow(follower_user_id):
+    #no error if relationship does not exist 
 
-    user = User.query.filter_by(id=follower_user_id).first()
     followed_user_id = json.loads(request.data).get("followed_user_id")
-    followed_user = User.query.filter_by(id=followed_user_id).first()
-    # case either user does not exist
-    if user is None or followed_user is None:
-        return failure_response("User cannot be found!")
-    # case follower id = follower id
+
     if follower_user_id == followed_user_id:
         return failure_response("User and follower ids are the same!")
-    # db handles case where relationship already exists, does not return error message though
+    if dao.getUser(follower_user_id) is None or dao.getUser(followed_user_id) is None:
+        return failure_response("One or both of these users cannot be found!")
+    
+    follower = dao.unfollow(follower_user_id=follower_user_id, followed_user_id=followed_user_id)
+    if follower is None:
+        return failure_response("The user was not able to be unfollowed!")
 
-    follower_user = User.query.filter_by(id=follower_user_id).first()
-    follower_user.unfollow(followed_user_id)
-    db.session.commit()
+    return success_response(follower)
 
-    return success_response(follower_user.serialize())
-
-# create post
 @app.route("/user/<int:user_id>/post/", methods=["POST"])
 def post(user_id):
 
-    # case user does not exist
-    user = User.query.filter_by(id=user_id).first()
+    user = dao.getUser(user_id)
     if user is None:
-        return failure_response("User cannot be found!")
-    # case post was not creeated for whatever reason, possibly because of incorrect request data
-    # still need to fix dateTime functionality, time functionality (only accepts ints rn)
+        return failure_response("User cannot be found!") 
 
+    # case post was not created for whatever reason, possibly because of incorrect request data
+    # still need to fix dateTime functionality, time functionality (only accepts ints rn)
     body = json.loads(request.data)
-    post = Post(
+    post = dao.post(
+        user_id = user_id,
         title=body.get("title"),
         dateTime=body.get("dateTime"),
         ingredients=body.get("ingredients"),
         recipe=body.get("recipe"),
         recipeTime=body.get("recipeTime"),
         difficultyRating=body.get("difficultyRating"),
-        numDifficultyRatings=1,
         overallRating=body.get("overallRating"),
-        numOverallRating=1,
-        priceRating=body.get("priceRating"),
-        numPriceRating=1
+        priceRating=body.get("priceRating")
     )
-
-    user = User.query.filter_by(id=user_id).first()
-    user.posts.append(post)
-
-    db.session.add(post)
-    db.session.commit()
-
-    return success_response(post.serialize(), 200)
+    if post is None:
+    	return failure_response("Post could not be created!")
+    return success_response(post, 200)
 
 # get post by post id
 @app.route("/post/<int:post_id>/")
 def getPost(post_id):
-    post = Post.query.filter_by(id=post_id).first()
+    post = dao.getPost(post_id)
     if post is None:
         return failure_response("Post does not exist!")
-    return success_response(post.serialize(), 200)
+    return success_response(post, 200)5
 
 
-# get posts by user id
-@app.route("/user/<int:user_id>/posts/")
-def getPostsByUser(user_id):
-    user = User.query.filter_by(id=user_id).first()
-    if user is None:
-        return failure_response("User does not exist!")
-    return success_response(user.getPosts(), 200)
+#don't think we need this, frontend can just call getUser instead 
+#@app.route("/user/<int:user_id>/posts/")
+# def getPostsByUser(user_id):
+#     user = User.query.filter_by(id=user_id).first()
+#     if user is None:
+#         return failure_response("User does not exist!")
+#     return success_response(user.getPosts(), 200)
 
-# delete post
+
+
+@app.route("/post/<int:post_id>/delete/", methods=["DELETE"])
+def deletePost(post_id):
+	post = dao.getPost(post_id)
+	if post is None:
+		return failure_response("Post was not found!")
+	post = dao.deletePost(post_id)
+	if post is None:
+		return failure_response("The server was not able to delete this post!")
+	return success_response(post, 200)
+
+
+
+
 # rate post difficulty (we need a way to make sure than each user can only rate each post once)
 # rate post overall (we need a way to make sure than each user can only rate each post once
 # add tag to post
