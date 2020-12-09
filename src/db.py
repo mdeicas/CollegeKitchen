@@ -148,8 +148,8 @@ class User(db.Model):
             self.followed.remove(followed_user)
 
     def is_following(self, user):
-        return self.followed.filter(
-            followers.c.followedID == user.id).count() > 0
+        return self.followed.filter(followers.c.followedID == user.id).count() > 0
+
 
     def getUser(self, user_id):
         return User.query.filter_by(id=user_id).first()
