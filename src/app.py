@@ -185,17 +185,12 @@ def getPost(post_id):
     post = dao.getPost(post_id)
     if post is None:
         return failure_response("Post does not exist!")
-    return success_response(post, 200)5
+    return success_response(post, 200)
 
 
-#don't think we need this, frontend can just call getUser instead 
-#@app.route("/user/<int:user_id>/posts/")
-# def getPostsByUser(user_id):
-#     user = User.query.filter_by(id=user_id).first()
-#     if user is None:
-#         return failure_response("User does not exist!")
-#     return success_response(user.getPosts(), 200)
-
+@app.route("/ratings/")
+def getAllRatings():
+    return success_response(dao.getAllRatings(),200)
 
 
 @app.route("/post/<int:post_id>/delete/", methods=["DELETE"])
@@ -208,17 +203,35 @@ def deletePost(post_id):
 		return failure_response("The server was not able to delete this post!")
 	return success_response(post, 200)
 
+@app.route("/rate/<int:post_id>/difficulty/", methods=["POST"])
+def rateDifficulty(post_id):
+    body = json.loads(request.data)
+    
+    score = body.get("score")
+    if score < 0 or score > 5:
+        return failure_response("The score must be in between 0 and 5!")
 
+    user_id = body.get("user_id")
+    if user_id is None or score is None:
+        return failure_response("No user_id or score provided!")
 
+    rating = dao.rateDifficulty(user_id=user_id, post_id=post_id, score=score)
+    if rating is None:
+        return failure_response("Post was not able to be rated!")
+    return success_response(rating, 200)
 
-# rate post difficulty (we need a way to make sure than each user can only rate each post once)
-# rate post overall (we need a way to make sure than each user can only rate each post once
-# add tag to post
+@app.route("/post/<int:post_id>/difficulty/")
+def getDifficultyRating(post_id):
+    post = dao.getPost(post_id)
+    if post is None:
+        return failure_response("That post was not found!")
+    return dao.getDifficultyRating(post_id)
 
-# add comment
-# delete comment
-
-# get feed -- do this later
+#TODO
+#1. the above 3 routes but for overallRating and priceRating 
+#2. tag functionality 
+#3. feed functionality 
+#4. authentication 
 
 
 if __name__ == "__main__":
