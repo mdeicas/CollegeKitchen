@@ -135,6 +135,7 @@ class User(db.Model):
         secondaryjoin=(followers.c.followedID == id), # "followers" is the RHS version of followed
         backref=db.backref("followers", lazy="dynamic"),
         lazy="dynamic")
+    ratings = db.relationship("Rating", back_populates="user")
 
 
     def follow(self, followed_user_id):
@@ -183,14 +184,22 @@ class Post(db.Model):
     recipeTime = db.Column(db.Integer, nullable=False)
 
     # 1..3 corresponds to easy medium hard
+
+    # difficultyRating = db.Column(db.Integer, nullable=False)
+    # numDifficultyRatings = db.Column(db.Integer, nullable=False)
+    # # integer 1..5 (5 stars)
+    # overallRating = db.Column(db.Integer, nullable=False)
+    # numOverallRating = db.Column(db.Integer, nullable=False)
+    # # integer 1.. 3/4/5 (dollar signs)
+    # priceRating = db.Column(db.Integer, nullable=False)
+    # numPriceRating = db.Column(db.Integer, nullable=False)
+
+
+    ratings = db.relationship("Rating", back_populates="post")
+    
     difficultyRating = db.Column(db.Integer, nullable=False)
-    numDifficultyRatings = db.Column(db.Integer, nullable=False)
-    # integer 1..5 (5 stars)
     overallRating = db.Column(db.Integer, nullable=False)
-    numOverallRating = db.Column(db.Integer, nullable=False)
-    # integer 1.. 3/4/5 (dollar signs)
     priceRating = db.Column(db.Integer, nullable=False)
-    numPriceRating = db.Column(db.Integer, nullable=False)
 
 
     userID = db.Column(db.Integer, db.ForeignKey("Users.id"))
@@ -198,6 +207,8 @@ class Post(db.Model):
     comments = db.relationship("Comment", cascade="delete")
     tags = db.relationship("Tag", cascade="delete")
     photos = db.relationship("Asset", cascade="delete")
+
+
 
     def rateDifficulty(self, rating):
         self.difficultyRating = ((self.difficultyRating * self.numDifficultyRatings) + rating)/(self.numDifficultyRatings + 1)
@@ -228,6 +239,32 @@ class Post(db.Model):
 
             "photos": [p.serialize for p in self.photos]
         }
+
+
+#users to posts many to many relationship that reflects the ratings a user gives to a post
+class Rating(db.Model):
+	__tablename__ = "Ratings"
+	
+	post_id = db.Column(db.Integer, db.ForeignKey("Posts.id"), primary_key=True)
+	user_id = db.Column(db.Integer, db.ForeignKey("Users.id"), primary_key=True)
+	
+	post = db.relationship("Post", back_populates="ratings")
+	user = db.relationship("User", back_populates="ratings")
+
+	overallRating = db.Column(db.Integer)
+	difficultyRating = db.Column(db.Integer)
+	priceRating = db.Column(db.Integer)
+
+	def serialize(self):
+		return {
+			"post_id": self.post_id, 
+			"user_id": self.user_id, 
+			"User_difficultyRating": self.difficultyRating,
+            "difficultyRating": self.post.difficultyRating
+			}
+
+
+
 
 class Comment(db.Model):
     __tablename__ = "Comments"
