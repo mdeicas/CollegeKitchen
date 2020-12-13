@@ -184,6 +184,19 @@ def post(user_id):
         return failure_response("Post could not be created!")
     return success_response(post, 200)
 
+# add tag to post
+@app.route("/post/<int:post_id>/tag/", methods=["POST"])
+def addTags(post_id):
+    body = json.loads(request.data)
+    tags = body.get("tags") # array of strings
+    post = dao.getPost(post_id)
+    if post is None:
+        return failure_response("Post cannot be found!") 
+    post = dao.updateTags(post_id, tags=tags)
+    if post is None:
+        return failure_response("Tags could not be updated!")
+    return success_response(post)
+
 # get post by post id
 @app.route("/post/<int:post_id>/")
 def getPost(post_id):
@@ -210,6 +223,15 @@ def getFollowingPosts(user_id):
     if followingPosts is None:
         return failure_response("User does not exist!")
     return success_response(followingPosts)
+
+@app.route("/posts/tags/")
+def getPostsByTags():
+    body = json.loads(request.data)
+    tags = body.get("tags") # array of strings
+    posts = dao.getPostsByTags(tags=tags)
+    if posts is None:
+        return failure_response("Could not get posts with the specified tags!")
+    return success_response(posts)
 
 
 @app.route("/ratings/")

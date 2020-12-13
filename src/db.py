@@ -208,30 +208,17 @@ class Post(db.Model):
     photos = db.relationship("Asset", cascade="delete")
 
     # tags
-    """ tags = {}
-    vegan = db.Column(db.Boolean, nullable=False)
-    tags["vegan"] = vegan
-    vegetarian = db.Column(db.Boolean, nullable=False)
-    tags["vegetarian"] = vegetarian
-    kosher = db.Column(db.Boolean, nullable=False)
-    tags["kosher"] = kosher
-    glutenFree = db.Column(db.Boolean, nullable=False)
-    tags["glutenFree"] = glutenFree
-    mexican = db.Column(db.Boolean, nullable=False)
-    tags["mexican"] = mexican
-    asian = db.Column(db.Boolean, nullable=False)
-    tags["asian"] = asian
-    italian = db.Column(db.Boolean, nullable=False)
-    tags["italian"] = italian
-    french = db.Column(db.Boolean, nullable=False)
-    tags["french"] = french
-    dessert = db.Column(db.Boolean, nullable=False)
-    tags["dessert"] = dessert
-    breakfast = db.Column(db.Boolean, nullable=False)
-    tags["breakfast"] = breakfast
-
-    for t in tags:
-        tags[t] = False """
+    # tags array to keep track more easily?
+    vegan = db.Column(db.Boolean, nullable=False, default=False)
+    vegetarian = db.Column(db.Boolean, nullable=False, default=False)
+    kosher = db.Column(db.Boolean, nullable=False, default=False)
+    glutenFree = db.Column(db.Boolean, nullable=False, default=False)
+    mexican = db.Column(db.Boolean, nullable=False, default=False)
+    asian = db.Column(db.Boolean, nullable=False, default=False)
+    italian = db.Column(db.Boolean, nullable=False, default=False)
+    french = db.Column(db.Boolean, nullable=False, default=False)
+    dessert = db.Column(db.Boolean, nullable=False, default=False)
+    breakfast = db.Column(db.Boolean, nullable=False, default=False)
 
 
     def rateDifficulty(self, rating):
@@ -244,17 +231,31 @@ class Post(db.Model):
         self.priceRating = ((self.priceRating * self.numPriceRating) + rating)/(self.numPriceRating + 1)
         self.numPriceRating = self.numPriceRating + 1
 
-    def setTags(self, tags):
-        for t in tags:
-            self.tags[t] = True
+    def trueTags(self):
+        trueTags = []
+        if self.vegan:
+            trueTags.append("vegan")
+        if self.vegetarian:
+            trueTags.append("vegetarian")
+        if self.kosher:
+            trueTags.append("kosher")
+        if self.glutenFree:
+            trueTags.append("glutenFree")
+        if self.mexican:
+            trueTags.append("mexican")
+        if self.asian:
+            trueTags.append("asian")
+        if self.italian:
+            trueTags.append("italian")
+        if self.french:
+            trueTags.append("french")
+        if self.dessert:
+            trueTags.append("dessert")
+        if self.breakfast:
+            trueTags.append("breakfast")
+        return trueTags
 
     def serialize(self):
-        """
-        trueTags = []
-        for t in self.tags:
-            if self.tags.get(t):
-                trueTags.append(t)
-        """
         return {
             "post_id": self.id, 
             "title": self.title, 
@@ -269,7 +270,7 @@ class Post(db.Model):
 
             "user_id": self.userID,
             "comments": [c.serialize(view="post") for c in self.comments],
-            # "tags": trueTags.
+            "tags": self.trueTags(),
 
             "photos": [p.serialize for p in self.photos]
         }
@@ -296,8 +297,6 @@ class Rating(db.Model):
             "User_difficultyRating": self.difficultyRating,
             "difficultyRating": self.post.difficultyRating
             }
-
-
 
 
 class Comment(db.Model):

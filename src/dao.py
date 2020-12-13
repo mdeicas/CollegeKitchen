@@ -55,6 +55,25 @@ def getFollowingPosts(user_id):
         allPosts.append(posts)
     return allPosts
 
+def updateTags(post_id, **kwargs):
+    tags = kwargs.get("tags")
+    temp_post = Post.query.filter_by(id=post_id).first()
+    if temp_post is None:
+        return None
+    for t in tags:
+        setattr(temp_post, t, True)
+        # temp_post.tags.append(t)
+    post = Post.query.filter_by(id=post_id).first()
+    db.session.commit()
+    return post.serialize()
+
+def getPostsByTags(**kwargs):
+    tags = kwargs.get("tags")
+    posts = db.session.query(Post)
+    for tag in tags:
+        posts = posts.filter(getattr(Post, tag) == (True)).all()
+    return [p.serialize() for p in posts]
+
 def uploadImage(imageData, imgType, typeId):
     asset = Asset(image_data=imageData, img_type=imgType, type_id=typeId)
     if asset is None:
