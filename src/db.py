@@ -293,12 +293,12 @@ class Rating(db.Model):
 		return {
 			"post_id": self.post_id, 
 			"user_id": self.user_id, 
-			"User_difficultyRating": self.difficultyRating,
+			#"User_difficultyRating": self.difficultyRating,
             "Post_difficultyRating": self.post.difficultyRating,
-            "User_priceRating": self.priceRating,
+            #"User_priceRating": self.priceRating,
             "Post_priceRating": self.post.priceRating,
             "User_overallRating": self.overallRating,
-            "Post_overallRating": self.post.overallRating,
+            "Post_overallRating": self.post.overallRating
 
 			}
 
