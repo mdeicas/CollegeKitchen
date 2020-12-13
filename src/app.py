@@ -33,51 +33,42 @@ def failure_response(message, code=404):
 @app.route("/user/image/upload/", methods=["POST"])
 def upload_image():
     body = json.loads(request.data)
-    image_data = body.get("image_data")
-    img_type = body.get("img_type")
-    type_id = body.get("type_id")
+    imageData = body.get("imageData")
+    imgType = body.get("imgType")
+    typeId = body.get("typeId")
     # no image data or image type
     if (image_data is None or img_type is None):
         return failure_response("No base64 URL to be found or no image type!")
     # incorrect image type
     if img_type != "profile" and img_type != "recipe":
-        return failure_response(img_type)
-    asset = Asset(image_data=image_data, img_type=img_type, type_id=type_id)
-    db.session.add(asset)
-    if img_type == "profile":
-        user = User.query.filter_by(id=type_id).first()
+        return failure_response(img_type)    
+    if imgType == "profile":
+        user = User.query.filter_by(id=typeId).first()
         if user is None:
-            return failure_response("User cannot be found!")
-        user.photo.append(asset)
-    elif img_type == "post":
-        post = Post.query.filter_by(id=type_id).first()
+            return failure_response("This user does not exist!")
+    elif imgType == "post":
+        post = Post.query.filter_by(id=typeId).first()
         if post is None:
-            return failure_response("Post cannot be found!")
-        post.photos.append(asset)
-    db.session.commit()
-
-    return success_response(asset.serialize(), 201)
+            return failure_response("This post does not exist!")
+    asset = dao.uploadImage(imageData=imageData, imgType=imgType, typeId=typeId)
+    if asset is None:
+        return failure_response("There was an error creating the asset!")
+    return success_response(asset, 201)
 
 
 @app.route("/image/<int:img_id>/")
 def get_image(img_id):
-    asset = Asset.query.filter_by(id=img_id).first()
+    asset = dao.getImage(img_id)
     if asset is None:
-        return failure_response("Image not found!")
-    return success_response(asset.serialize(), 200)
+        return failure_response("Image cannot be found!")
+    return success_response(asset, 200)
 
 @app.route("/image/<int:img_id>/delete/", methods=["DELETE"])
 def delete_image(img_id):
-    asset = Asset.query.filter_by(id=img_id).first()
+    asset = dao.deleteImage(img_id)
     if asset is None:
         return failure_response("Image not found!")
-    salt = asset.salt
-    ext = asset.extension
-    img_filename = f"{salt}.{ext}"
-    asset.delete(img_filename)
-    db.session.delete(asset)
-    db.session.commit()
-    return success_response(asset.serialize())
+    return success_response(asset)
     
 
 @app.route("/getUsers/")
@@ -154,6 +145,20 @@ def unfollow(follower_user_id):
 
     return success_response(follower)
 
+@app.route("/user/<int:user_id>/following/")
+def getFollowingUsernames(user_id):
+    following = dao.getFollowingUsernames(user_id)
+    if following is None:
+        return failure_response("User not found!")
+    return success_response(following)
+
+@app.route("/user/<int:user_id>/followers/")
+def getFollowersUsernames(user_id):
+    followers = dao.getFollowersUsernames(user_id)
+    if followers is None:
+        return failure_response("User not found!")
+    return success_response(followers)
+
 @app.route("/user/<int:user_id>/post/", methods=["POST"])
 def post(user_id):
 
@@ -176,7 +181,7 @@ def post(user_id):
         # priceRating=body.get("priceRating")
     )
     if post is None:
-    	return failure_response("Post could not be created!")
+        return failure_response("Post could not be created!")
     return success_response(post, 200)
 
 # get post by post id
@@ -187,6 +192,25 @@ def getPost(post_id):
         return failure_response("Post does not exist!")
     return success_response(post, 200)
 
+@app.route("/posts/")
+def getPosts():
+    return success_response(dao.getPosts())
+
+# get posts by user id
+@app.route("/user/<int:user_id>/posts/")
+def getPostsByUser(user_id):
+    posts = dao.getPostsByUser(user_id)
+    if posts is None:
+        return failure_response("User not found!")
+    return success_response(posts, 200)
+
+@app.route("/user/<int:user_id>/following/posts/")
+def getFollowingPosts(user_id):
+    followingPosts = dao.getFollowingPosts(user_id)
+    if followingPosts is None:
+        return failure_response("User does not exist!")
+    return success_response(followingPosts)
+
 
 @app.route("/ratings/")
 def getAllRatings():
@@ -195,13 +219,13 @@ def getAllRatings():
 
 @app.route("/post/<int:post_id>/delete/", methods=["DELETE"])
 def deletePost(post_id):
-	post = dao.getPost(post_id)
-	if post is None:
-		return failure_response("Post was not found!")
-	post = dao.deletePost(post_id)
-	if post is None:
-		return failure_response("The server was not able to delete this post!")
-	return success_response(post, 200)
+    post = dao.getPost(post_id)
+    if post is None:
+        return failure_response("Post was not found!")
+    post = dao.deletePost(post_id)
+    if post is None:
+        return failure_response("The server was not able to delete this post!")
+    return success_response(post, 200)
 
 
 #difficulty rating routes
@@ -290,6 +314,8 @@ def getOverallRating(post_id):
 #TODO
 #1. the above 3 routes but for overallRating and priceRating 
 #2. tag functionality 
+
+
 #3. feed functionality 
 #4. authentication 
 
