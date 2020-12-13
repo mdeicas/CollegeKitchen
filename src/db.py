@@ -210,15 +210,15 @@ class Post(db.Model):
 
 
 
-    def rateDifficulty(self, rating):
-        self.difficultyRating = ((self.difficultyRating * self.numDifficultyRatings) + rating)/(self.numDifficultyRatings + 1)
-        self.numDifficultyRatings = self.numDifficultyRatings + 1
-    def rateOverall(self, rating):
-        self.overallRating = ((self.overallRating * self.numOverallRating) + rating)/(self.numOverallRating + 1)
-        self.numOverallRating = self.numOverallRating + 1
-    def ratePrice(self, rating):
-        self.priceRating = ((self.priceRating * self.numPriceRating) + rating)/(self.numPriceRating + 1)
-        self.numPriceRating = self.numPriceRating + 1
+    # def rateDifficulty(self, rating):
+    #     self.difficultyRating = ((self.difficultyRating * self.numDifficultyRatings) + rating)/(self.numDifficultyRatings + 1)
+    #     self.numDifficultyRatings = self.numDifficultyRatings + 1
+    # def rateOverall(self, rating):
+    #     self.overallRating = ((self.overallRating * self.numOverallRating) + rating)/(self.numOverallRating + 1)
+    #     self.numOverallRating = self.numOverallRating + 1
+    # def ratePrice(self, rating):
+    #     self.priceRating = ((self.priceRating * self.numPriceRating) + rating)/(self.numPriceRating + 1)
+    #     self.numPriceRating = self.numPriceRating + 1
 
     def serialize(self):
         return {
@@ -260,7 +260,12 @@ class Rating(db.Model):
 			"post_id": self.post_id, 
 			"user_id": self.user_id, 
 			"User_difficultyRating": self.difficultyRating,
-            "difficultyRating": self.post.difficultyRating
+            "Post_difficultyRating": self.post.difficultyRating,
+            "User_priceRating": self.priceRating,
+            "Post_priceRating": self.post.priceRating,
+            "User_overallRating": self.overallRating,
+            "Post_overallRating": self.post.overallRating,
+
 			}
 
 

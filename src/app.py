@@ -170,10 +170,10 @@ def post(user_id):
         dateTime=body.get("dateTime"),
         ingredients=body.get("ingredients"),
         recipe=body.get("recipe"),
-        recipeTime=body.get("recipeTime"),
-        difficultyRating=body.get("difficultyRating"),
-        overallRating=body.get("overallRating"),
-        priceRating=body.get("priceRating")
+        recipeTime=body.get("recipeTime")
+        # difficultyRating=body.get("difficultyRating"),
+        # overallRating=body.get("overallRating"),
+        # priceRating=body.get("priceRating")
     )
     if post is None:
     	return failure_response("Post could not be created!")
@@ -203,7 +203,9 @@ def deletePost(post_id):
 		return failure_response("The server was not able to delete this post!")
 	return success_response(post, 200)
 
-@app.route("/rate/<int:post_id>/difficulty/", methods=["POST"])
+
+#difficulty rating routes
+@app.route("/post/<int:post_id>/difficulty/", methods=["POST"])
 def rateDifficulty(post_id):
     body = json.loads(request.data)
     
@@ -226,6 +228,64 @@ def getDifficultyRating(post_id):
     if post is None:
         return failure_response("That post was not found!")
     return dao.getDifficultyRating(post_id)
+
+
+
+#price rating routes
+@app.route("/post/<int:post_id>/price/", methods=["POST"])
+def ratePrice(post_id):
+    body = json.loads(request.data)
+    
+    score = body.get("score")
+    if score < 0 or score > 5:
+        return failure_response("The score must be in between 0 and 5!")
+
+    user_id = body.get("user_id")
+    if user_id is None or score is None:
+        return failure_response("No user_id or score provided!")
+
+    rating = dao.ratePrice(user_id=user_id, post_id=post_id, score=score)
+    if rating is None:
+        return failure_response("Post was not able to be rated!")
+    return success_response(rating, 200)
+
+@app.route("/post/<int:post_id>/price/")
+def getPriceRating(post_id):
+    post = dao.getPost(post_id)
+    if post is None:
+        return failure_response("That post was not found!")
+    return dao.getPriceRating(post_id)
+
+
+
+#overall rating routes
+@app.route("/post/<int:post_id>/overall/", methods=["POST"])
+def rateOverall(post_id):
+    body = json.loads(request.data)
+    
+    score = body.get("score")
+    if score < 0 or score > 5:
+        return failure_response("The score must be in between 0 and 5!")
+
+    user_id = body.get("user_id")
+    if user_id is None or score is None:
+        return failure_response("No user_id or score provided!")
+
+    rating = dao.rateOverall(user_id=user_id, post_id=post_id, score=score)
+    if rating is None:
+        return failure_response("Post was not able to be rated!")
+    return success_response(rating, 200)
+
+@app.route("/post/<int:post_id>/overall/")
+def getOverallRating(post_id):
+    post = dao.getPost(post_id)
+    if post is None:
+        return failure_response("That post was not found!")
+    return dao.getOverallRating(post_id)
+
+
+
+
 
 #TODO
 #1. the above 3 routes but for overallRating and priceRating 
