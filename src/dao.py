@@ -88,27 +88,31 @@ def deleteImage(img_id):
     return asset.serialize()
 
 def post(user_id, **kwargs):
-    post = Post(
-        title=kwargs.get("title"),
-        dateTime=kwargs.get("dateTime"),
-        ingredients=kwargs.get("ingredients"),
-        recipe=kwargs.get("recipe"),
-        recipeTime=kwargs.get("recipeTime"),
-        difficultyRating=kwargs.get("difficultyRating"),
-        #numDifficultyRatings=1,
-        overallRating=kwargs.get("overallRating"),
-        #numOverallRating=1,
-        priceRating=kwargs.get("priceRating")#,
-        #numPriceRating=1
-    )
+	post = Post(
+		title=kwargs.get("title"),
+		dateTime=kwargs.get("dateTime"),
+		ingredients=kwargs.get("ingredients"),
+		recipe=kwargs.get("recipe"),
+		recipeTime=kwargs.get("recipeTime"),
+		#difficultyRating=kwargs.get("difficultyRating"),
+		difficultyRating=0,
+		#numDifficultyRatings=1,
+		#overallRating=kwargs.get("overallRating"),
+		overallRating=0,
+		#numOverallRating=1,
+		#priceRating=kwargs.get("priceRating")#,
+		priceRating=0,
+		#numPriceRating=1
+	)
 
-    user = User.query.filter_by(id=user_id).first()
-    user.posts.append(post)
+	user = User.query.filter_by(id=user_id).first()
+	user.posts.append(post)
 
-    db.session.add(post)
-    db.session.commit()
+	db.session.add(post)
+	db.session.commit()
 
-    return post.serialize()
+	return post.serialize()
+
 
 def getPost(post_id):
     post = Post.query.filter_by(id=post_id).first()
@@ -132,23 +136,10 @@ def deletePost(post_id):
     db.session.commit()
     return post.serialize()
 
-def rateDifficulty():
-    pass
-
-def getDifficultyRating():
-    pass
-
-def rateOverall():
-    pass
-def ratePrice():
-    pass
-
-
 def getAllRatings():
     return [r.serialize() for r in Rating.query.all()]
 
-
-
+#difficulty rating methods 
 def rateDifficulty(user_id, post_id, score):
     rating = Rating.query.filter_by(post_id=post_id).filter_by(user_id=user_id).first()
     if rating is not None:
@@ -171,21 +162,89 @@ def getDifficultyRating(post_id):
     return {"difficultyRating": Post.query.filter_by(id=post_id).first().difficultyRating}
 
 def updateDifficultyRating(post_id):
-    sumOfRatings = db.session.query(func.sum(Rating.difficultyRating)).scalar()
-    numRatings = db.session.query(func.count(Rating.difficultyRating)).scalar()
-    print(""*3)
-    print("the sum of the difficulty ratings is: " + str(sumOfRatings))
-    print("the number of difficulty ratings is: " + str(numRatings))
-    print(""*3)
 
-    post = Post.query.filter_by(id=post_id).first()
-    post.difficultyRating = sumOfRatings/numRatings
-    db.session.commit()
+	sumOfRatings = db.session.query(func.sum(Rating.difficultyRating)).filter_by(post_id=post_id).scalar()
+	numRatings = db.session.query(func.count(Rating.difficultyRating)).filter_by(post_id=post_id).scalar()
+
+  post = Post.query.filter_by(id=post_id).first()
+  post.difficultyRating = sumOfRatings/numRatings
+  db.session.commit()
 
 def addTag(post_id, tags):
     post = getPost(post_id)
     post.setTag(tags)
 
+
+
+
+#price rating methods 
+def ratePrice(user_id, post_id, score):
+	rating = Rating.query.filter_by(post_id=post_id).filter_by(user_id=user_id).first()
+	if rating is not None:
+		rating.priceRating = score
+	else:
+		post = Post.query.filter_by(id=post_id).first()
+		user = User.query.filter_by(id=user_id).first()
+
+		rating = Rating(priceRating=score)
+		rating.post = post
+		rating.user = user
+		user.ratings.append(rating)
+		db.session.add(rating)
+	
+	db.session.commit()
+	updatePriceRating(post_id)
+	return rating.serialize()
+
+def getPriceRating(post_id):
+	return {"priceRating": Post.query.filter_by(id=post_id).first().priceRating}
+
+def updatePriceRating(post_id):
+	sumOfRatings = db.session.query(func.sum(Rating.priceRating)).filter_by(post_id=post_id).scalar()
+	numRatings = db.session.query(func.count(Rating.priceRating)).filter_by(post_id=post_id).scalar()
+	print(""*3)
+	print("the sum of the price ratings is: " + str(sumOfRatings))
+	print("the number of price ratings is: " + str(numRatings))
+	print(""*3)
+
+	post = Post.query.filter_by(id=post_id).first()
+	post.priceRating = sumOfRatings/numRatings
+	db.session.commit()
+
+
+#overall rating methods 
+def rateOverall(user_id, post_id, score):
+	rating = Rating.query.filter_by(post_id=post_id).filter_by(user_id=user_id).first()
+	if rating is not None:
+		rating.overallRating = score
+	else:
+		post = Post.query.filter_by(id=post_id).first()
+		user = User.query.filter_by(id=user_id).first()
+
+		rating = Rating(overallRating=score)
+		rating.post = post
+		rating.user = user
+		user.ratings.append(rating)
+		db.session.add(rating)
+	
+	db.session.commit()
+	updateOverallRating(post_id)
+	return rating.serialize()
+
+def getOverallRating(post_id):
+	return {"overallRating": Post.query.filter_by(id=post_id).first().overallRating}
+
+def updateOverallRating(post_id):
+	sumOfRatings = db.session.query(func.sum(Rating.overallRating)).filter_by(post_id=post_id).scalar()
+	numRatings = db.session.query(func.count(Rating.overallRating)).filter_by(post_id=post_id).scalar()
+	print(""*3)
+	print("the sum of the overall ratings is: " + str(sumOfRatings))
+	print("the number of overall ratings is: " + str(numRatings))
+	print(""*3)
+
+	post = Post.query.filter_by(id=post_id).first()
+	post.overallRating = sumOfRatings/numRatings
+	db.session.commit()
 
 
 

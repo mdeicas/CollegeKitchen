@@ -234,15 +234,15 @@ class Post(db.Model):
         tags[t] = False """
 
 
-    def rateDifficulty(self, rating):
-        self.difficultyRating = ((self.difficultyRating * self.numDifficultyRatings) + rating)/(self.numDifficultyRatings + 1)
-        self.numDifficultyRatings = self.numDifficultyRatings + 1
-    def rateOverall(self, rating):
-        self.overallRating = ((self.overallRating * self.numOverallRating) + rating)/(self.numOverallRating + 1)
-        self.numOverallRating = self.numOverallRating + 1
-    def ratePrice(self, rating):
-        self.priceRating = ((self.priceRating * self.numPriceRating) + rating)/(self.numPriceRating + 1)
-        self.numPriceRating = self.numPriceRating + 1
+    # def rateDifficulty(self, rating):
+    #     self.difficultyRating = ((self.difficultyRating * self.numDifficultyRatings) + rating)/(self.numDifficultyRatings + 1)
+    #     self.numDifficultyRatings = self.numDifficultyRatings + 1
+    # def rateOverall(self, rating):
+    #     self.overallRating = ((self.overallRating * self.numOverallRating) + rating)/(self.numOverallRating + 1)
+    #     self.numOverallRating = self.numOverallRating + 1
+    # def ratePrice(self, rating):
+    #     self.priceRating = ((self.priceRating * self.numPriceRating) + rating)/(self.numPriceRating + 1)
+    #     self.numPriceRating = self.numPriceRating + 1
 
     def setTags(self, tags):
         for t in tags:
@@ -277,25 +277,31 @@ class Post(db.Model):
 
 #users to posts many to many relationship that reflects the ratings a user gives to a post
 class Rating(db.Model):
-    __tablename__ = "Ratings"
-    
-    post_id = db.Column(db.Integer, db.ForeignKey("Posts.id"), primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("Users.id"), primary_key=True)
-    
-    post = db.relationship("Post", back_populates="ratings")
-    user = db.relationship("User", back_populates="ratings")
+	__tablename__ = "Ratings"
+	
+	post_id = db.Column(db.Integer, db.ForeignKey("Posts.id"), primary_key=True)
+	user_id = db.Column(db.Integer, db.ForeignKey("Users.id"), primary_key=True)
+	
+	post = db.relationship("Post", back_populates="ratings")
+	user = db.relationship("User", back_populates="ratings")
 
-    overallRating = db.Column(db.Integer)
-    difficultyRating = db.Column(db.Integer)
-    priceRating = db.Column(db.Integer)
+	overallRating = db.Column(db.Integer)
+	difficultyRating = db.Column(db.Integer)
+	priceRating = db.Column(db.Integer)
 
-    def serialize(self):
-        return {
-            "post_id": self.post_id, 
-            "user_id": self.user_id, 
-            "User_difficultyRating": self.difficultyRating,
-            "difficultyRating": self.post.difficultyRating
-            }
+	def serialize(self):
+		return {
+			"post_id": self.post_id, 
+			"user_id": self.user_id, 
+			"User_difficultyRating": self.difficultyRating,
+            "Post_difficultyRating": self.post.difficultyRating,
+            "User_priceRating": self.priceRating,
+            "Post_priceRating": self.post.priceRating,
+            "User_overallRating": self.overallRating,
+            "Post_overallRating": self.post.overallRating,
+
+			}
+
 
 
 
