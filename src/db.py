@@ -205,9 +205,33 @@ class Post(db.Model):
     userID = db.Column(db.Integer, db.ForeignKey("Users.id"))
 
     comments = db.relationship("Comment", cascade="delete")
-    tags = db.relationship("Tag", cascade="delete")
     photos = db.relationship("Asset", cascade="delete")
 
+    # tags
+    """ tags = {}
+    vegan = db.Column(db.Boolean, nullable=False)
+    tags["vegan"] = vegan
+    vegetarian = db.Column(db.Boolean, nullable=False)
+    tags["vegetarian"] = vegetarian
+    kosher = db.Column(db.Boolean, nullable=False)
+    tags["kosher"] = kosher
+    glutenFree = db.Column(db.Boolean, nullable=False)
+    tags["glutenFree"] = glutenFree
+    mexican = db.Column(db.Boolean, nullable=False)
+    tags["mexican"] = mexican
+    asian = db.Column(db.Boolean, nullable=False)
+    tags["asian"] = asian
+    italian = db.Column(db.Boolean, nullable=False)
+    tags["italian"] = italian
+    french = db.Column(db.Boolean, nullable=False)
+    tags["french"] = french
+    dessert = db.Column(db.Boolean, nullable=False)
+    tags["dessert"] = dessert
+    breakfast = db.Column(db.Boolean, nullable=False)
+    tags["breakfast"] = breakfast
+
+    for t in tags:
+        tags[t] = False """
 
 
     def rateDifficulty(self, rating):
@@ -220,7 +244,17 @@ class Post(db.Model):
         self.priceRating = ((self.priceRating * self.numPriceRating) + rating)/(self.numPriceRating + 1)
         self.numPriceRating = self.numPriceRating + 1
 
+    def setTags(self, tags):
+        for t in tags:
+            self.tags[t] = True
+
     def serialize(self):
+        """
+        trueTags = []
+        for t in self.tags:
+            if self.tags.get(t):
+                trueTags.append(t)
+        """
         return {
             "post_id": self.id, 
             "title": self.title, 
@@ -235,7 +269,7 @@ class Post(db.Model):
 
             "user_id": self.userID,
             "comments": [c.serialize(view="post") for c in self.comments],
-            "tags": [t.serialize(view="post") for t in self.tags],
+            # "tags": trueTags.
 
             "photos": [p.serialize for p in self.photos]
         }
@@ -243,25 +277,25 @@ class Post(db.Model):
 
 #users to posts many to many relationship that reflects the ratings a user gives to a post
 class Rating(db.Model):
-	__tablename__ = "Ratings"
-	
-	post_id = db.Column(db.Integer, db.ForeignKey("Posts.id"), primary_key=True)
-	user_id = db.Column(db.Integer, db.ForeignKey("Users.id"), primary_key=True)
-	
-	post = db.relationship("Post", back_populates="ratings")
-	user = db.relationship("User", back_populates="ratings")
+    __tablename__ = "Ratings"
+    
+    post_id = db.Column(db.Integer, db.ForeignKey("Posts.id"), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("Users.id"), primary_key=True)
+    
+    post = db.relationship("Post", back_populates="ratings")
+    user = db.relationship("User", back_populates="ratings")
 
-	overallRating = db.Column(db.Integer)
-	difficultyRating = db.Column(db.Integer)
-	priceRating = db.Column(db.Integer)
+    overallRating = db.Column(db.Integer)
+    difficultyRating = db.Column(db.Integer)
+    priceRating = db.Column(db.Integer)
 
-	def serialize(self):
-		return {
-			"post_id": self.post_id, 
-			"user_id": self.user_id, 
-			"User_difficultyRating": self.difficultyRating,
+    def serialize(self):
+        return {
+            "post_id": self.post_id, 
+            "user_id": self.user_id, 
+            "User_difficultyRating": self.difficultyRating,
             "difficultyRating": self.post.difficultyRating
-			}
+            }
 
 
 
@@ -282,6 +316,7 @@ class Comment(db.Model):
         "user_id": self.userID, 
         "post_id": self.postID
         }
+
 
 class Tag(db.Model):
     __tablename__ = "Tags"
