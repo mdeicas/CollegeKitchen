@@ -10,6 +10,7 @@ import random
 import re
 import string
 
+
 db = SQLAlchemy()
 
 EXTENSIONS = ["png", "gif", "jpg", "jpeg"]
@@ -178,7 +179,7 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     title = db.Column(db.String, nullable=False)
-    dateTime = db.Column(db.Integer, nullable=False) # need to change to DateTime later
+    dateTime = db.Column(db.DateTime, nullable=False) # need to change to DateTime later
     ingredients = db.Column(db.String, nullable=False)
     recipe = db.Column(db.String)
     recipeTime = db.Column(db.Integer, nullable=False)
@@ -259,7 +260,7 @@ class Post(db.Model):
         return {
             "post_id": self.id, 
             "title": self.title, 
-            "dateTime": self.dateTime, 
+            "dateTime": self.dateTime.strftime("%b-%d-%Y-%H:%M"),
             "ingredients": self.ingredients, 
             "recipe": self.recipe, 
             "recipeTime": self.recipeTime, 
