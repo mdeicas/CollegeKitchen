@@ -223,13 +223,17 @@ def getFollowingPosts(user_id):
         return failure_response("User does not exist!")
     return success_response(followingPosts)
 
-@app.route("/posts/tags/")
-def getPostsByTags():
+@app.route("/posts/filter/", methods=["POST"])
+def getPostsByFilters():
     body = json.loads(request.data)
-    tags = body.get("tags") # array of strings
-    posts = dao.getPostsByTags(tags=tags)
+    tags = body.get("tags")
+    price = body.get("price")
+    difficulty = body.get("difficulty")
+    if tags is None and price is None and difficulty is None:
+        return failure_response("No filters selected!")
+    posts = dao.getPostsByFilters(tags=tags, price=price, difficulty=difficulty)
     if posts is None:
-        return failure_response("Could not get posts with the specified tags!")
+        return failure_response("Could not get posts with the specified filters!")
     return success_response(posts)
 
 

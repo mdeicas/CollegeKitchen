@@ -67,6 +67,20 @@ def updateTags(post_id, **kwargs):
     db.session.commit()
     return post.serialize()
 
+def getPostsByFilters(**kwargs):
+    tags = kwargs.get("tags")
+    price = kwargs.get("price")
+    difficulty = kwargs.get("difficulty")
+    posts = db.session.query(Post)
+    if tags is not None: 
+        for tag in tags:
+            posts = posts.filter(getattr(Post, tag) == (True))
+    if price is not None:
+        posts = posts.filter_by(priceRating=price)
+    if difficulty is not None: 
+        posts = posts.filter_by(difficultyRating=difficulty).all()
+    return [p.serialize() for p in posts]
+
 def getPostsByTags(**kwargs):
     tags = kwargs.get("tags")
     posts = db.session.query(Post)
