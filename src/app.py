@@ -276,7 +276,7 @@ def rateOverall(post_id):
         return failure_response("The score must be in between 0 and 5!")
 
     if dao.getPost(post_id) is None:
-    	return failure_response("That post was not found!")
+        return failure_response("That post was not found!")
 
     user_id = body.get("user_id")
     if user_id is None or score is None:
@@ -297,16 +297,20 @@ def getOverallRating(post_id):
 #can pass a list of tags, but not neccessary. 
 @app.route("/posts/popular/", methods=["POST"])
 def getPopularPostsbyTags():
-	body = json.loads(request.data)
-	tags = body.get("tags") 
-	return success_response(dao.getPopularPostsbyTags(tags),200)
+    body = json.loads(request.data)
+    tags = body.get("tags") 
+    price = body.get("price")
+    difficulty = body.get("difficulty")
+    return success_response(dao.getPopularPostsbyTags(tags=tags,price=price, difficulty=difficulty),200)
 
 
 @app.route("/user/<int:user_id>/following/posts/", methods=["POST"])
 def getFollowingPostsByTags(user_id):
     body = json.loads(request.data)
     tags = body.get("tags") 
-    followingPosts = dao.getFollowingPostsByTags(user_id, tags)
+    price = body.get("price")
+    difficulty = body.get("difficulty")
+    followingPosts = dao.getFollowingPostsByTags(user_id, tags=tags, price=price, difficulty=difficulty)
     if followingPosts is None:
         return failure_response("User does not exist!")
     return success_response(followingPosts, 200)
