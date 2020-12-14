@@ -170,7 +170,6 @@ class User(db.Model):
             "posts": [p.serialize() for p in self.posts],
             "is_following": [u.username for u in self.followed],
             "followed_by": self.getFollowersUsernames()
-            #"followed_by": [u.username for u in db.session.query(followers).filter(followers.c.followedID==self.id).all()]
         }
 
 
@@ -183,18 +182,6 @@ class Post(db.Model):
     ingredients = db.Column(db.String, nullable=False)
     recipe = db.Column(db.String)
     recipeTime = db.Column(db.Integer, nullable=False)
-
-    # 1..3 corresponds to easy medium hard
-
-    # difficultyRating = db.Column(db.Integer, nullable=False)
-    # numDifficultyRatings = db.Column(db.Integer, nullable=False)
-    # # integer 1..5 (5 stars)
-    # overallRating = db.Column(db.Integer, nullable=False)
-    # numOverallRating = db.Column(db.Integer, nullable=False)
-    # # integer 1.. 3/4/5 (dollar signs)
-    # priceRating = db.Column(db.Integer, nullable=False)
-    # numPriceRating = db.Column(db.Integer, nullable=False)
-
 
     ratings = db.relationship("Rating", back_populates="post")
     
@@ -221,16 +208,6 @@ class Post(db.Model):
     dessert = db.Column(db.Boolean, nullable=False, default=False)
     breakfast = db.Column(db.Boolean, nullable=False, default=False)
 
-
-    # def rateDifficulty(self, rating):
-    #     self.difficultyRating = ((self.difficultyRating * self.numDifficultyRatings) + rating)/(self.numDifficultyRatings + 1)
-    #     self.numDifficultyRatings = self.numDifficultyRatings + 1
-    # def rateOverall(self, rating):
-    #     self.overallRating = ((self.overallRating * self.numOverallRating) + rating)/(self.numOverallRating + 1)
-    #     self.numOverallRating = self.numOverallRating + 1
-    # def ratePrice(self, rating):
-    #     self.priceRating = ((self.priceRating * self.numPriceRating) + rating)/(self.numPriceRating + 1)
-    #     self.numPriceRating = self.numPriceRating + 1
 
     def trueTags(self):
         trueTags = []
@@ -295,9 +272,7 @@ class Rating(db.Model):
 		return {
 			"post_id": self.post_id, 
 			"user_id": self.user_id, 
-			#"User_difficultyRating": self.difficultyRating,
             "Post_difficultyRating": self.post.difficultyRating,
-            #"User_priceRating": self.priceRating,
             "Post_priceRating": self.post.priceRating,
             "User_overallRating": self.overallRating,
             "Post_overallRating": self.post.overallRating
