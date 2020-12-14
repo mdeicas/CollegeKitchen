@@ -47,6 +47,9 @@ def getFollowersUsernames(user_id):
 
 def getFollowingPostsByTags(user_id, tags):
 
+    price = kwargs.get("price")
+    difficulty = kwargs.get("difficulty")
+
     following = getFollowingUsernames(user_id)
     if following is None:
         return None
@@ -57,6 +60,10 @@ def getFollowingPostsByTags(user_id, tags):
     if not (tags is None or len(tags)==0):
         for tag in tags:
             posts= posts.filter(getattr(Post, tag) == (True))
+    if price is not None:
+        posts = posts.filter_by(priceRating=price)
+    if difficulty is not None: 
+        posts = posts.filter_by(difficultyRating=difficulty)
     
     allPosts = []
     #now filter for following posts only
@@ -85,6 +92,8 @@ def getPostPopularity(post_id):
 
 def getPopularPostsbyTags(tags):
 	posts = db.session.query(Post)
+    price = kwargs.get("price")
+    difficulty = kwargs.get("difficulty")
 
 	#if there are no tags, then return all posts sorted by popularity 
 	if(tags is None or len(tags)==0):
@@ -92,9 +101,13 @@ def getPopularPostsbyTags(tags):
 		posts.sort(key = lambda x: getPostPopularity(x.id), reverse=True)
 		return [p.serialize() for p in posts]
     
-	#otherwise only return posts that have the given tags 
+	#otherwise only return posts that have the given tags, price, or difficulty
 	for tag in tags:
 		posts = posts.filter(getattr(Post, tag) == (True))
+    if price is not None:
+        posts = posts.filter_by(priceRating=price)
+    if difficulty is not None: 
+        posts = posts.filter_by(difficultyRating=difficulty)
 
 	posts = posts.all()
 	posts.sort(key = lambda x: getPostPopularity(x.id), reverse=True)
