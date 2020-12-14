@@ -1,5 +1,6 @@
 from db import db, User, Post, Tag, Comment, Rating
 from sqlalchemy import func
+import datetime
 
 def getUsers():
     return [u.serialize() for u in User.query.all()]
@@ -44,16 +45,61 @@ def getFollowersUsernames(user_id):
         return None
     return user.getFollowersUsernames()
 
-def getFollowingPosts(user_id):
+def getFollowingPostsByTags(user_id, tags):
+
     following = getFollowingUsernames(user_id)
     if following is None:
         return None
+
+    posts = db.session.query(Post)
+    
+    #filter for tags first 
+    if not (tags is None or len(tags)==0):
+        for tag in tags:
+            posts= posts.filter(getattr(Post, tag) == (True))
+    
     allPosts = []
+    #now filter for following posts only
     for f in following:
         followed = User.query.filter_by(username=f).first()
-        posts = getPostsByUser(followed.id)
-        allPosts.append(posts)
-    return allPosts
+        followedPosts = posts.filter_by(userID=followed.id)
+        for p in followedPosts:
+            allPosts.append(p)
+
+
+    allPosts.sort(key=lambda x: x.dateTime)
+    return [p.serialize() for p in allPosts]
+
+
+def getPostPopularity(post_id):
+	numRatings = db.session.query(func.count(Rating.overallRating)).filter_by(post_id=post_id).scalar()
+	averageRating = Post.query.filter_by(id=post_id).first().overallRating
+	
+	popularity = numRatings
+	if(averageRating<2):
+		popularity=popularity/2
+	if(averageRating>4):
+		popularity=(popularity*3)/2
+
+	return popularity
+
+def getPopularPostsbyTags(tags):
+	posts = db.session.query(Post)
+
+	#if there are no tags, then return all posts sorted by popularity 
+	if(tags is None or len(tags)==0):
+		posts = posts.all()
+		posts.sort(key = lambda x: getPostPopularity(x.id), reverse=True)
+		return [p.serialize() for p in posts]
+    
+	#otherwise only return posts that have the given tags 
+	for tag in tags:
+		posts = posts.filter(getattr(Post, tag) == (True))
+
+	posts = posts.all()
+	posts.sort(key = lambda x: getPostPopularity(x.id), reverse=True)
+	return [p.serialize() for p in posts]
+
 
 def updateTags(post_id, **kwargs):
     tags = kwargs.get("tags")
@@ -71,7 +117,9 @@ def getPostsByTags(**kwargs):
     tags = kwargs.get("tags")
     posts = db.session.query(Post)
     for tag in tags:
-        posts = posts.filter(getattr(Post, tag) == (True)).all()
+        posts = posts.filter(getattr(Post, tag) == (True))
+
+    posts = posts.all()
     return [p.serialize() for p in posts]
 
 def uploadImage(imageData, imgType, typeId):
@@ -109,7 +157,7 @@ def deleteImage(img_id):
 def post(user_id, **kwargs):
 	post = Post(
 		title=kwargs.get("title"),
-		dateTime=kwargs.get("dateTime"),
+		dateTime=datetime.datetime.now(),
 		ingredients=kwargs.get("ingredients"),
 		recipe=kwargs.get("recipe"),
 		recipeTime=kwargs.get("recipeTime"),
@@ -197,8 +245,6 @@ def updateOverallRating(post_id):
 	post = Post.query.filter_by(id=post_id).first()
 	post.overallRating = sumOfRatings/numRatings
 	db.session.commit()
-
-
 
 
 

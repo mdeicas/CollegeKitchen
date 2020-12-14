@@ -169,15 +169,24 @@ def post(user_id):
     # case post was not created for whatever reason, possibly because of incorrect request data
     # still need to fix dateTime functionality, time functionality (only accepts ints rn)
     body = json.loads(request.data)
+
+    difficultyRating=body.get("difficultyRating")
+    if(difficultyRating>3 or difficultyRating<0):
+        return failure_response("The difficultyRating must be 1, 2, or 3!")
+
+    priceRating=body.get("priceRating")
+    if(priceRating>3 or priceRating<0):
+        return failure_response("The priceRating must be 1, 2, or 3!")
+
+
     post = dao.post(
         user_id = user_id,
         title=body.get("title"),
-        dateTime=body.get("dateTime"),
         ingredients=body.get("ingredients"),
         recipe=body.get("recipe"),
         recipeTime=body.get("recipeTime"),
-        difficultyRating=body.get("difficultyRating"),
-        priceRating=body.get("priceRating")
+        difficultyRating=difficultyRating,
+        priceRating=priceRating
     )
     if post is None:
         return failure_response("Post could not be created!")
@@ -216,22 +225,6 @@ def getPostsByUser(user_id):
         return failure_response("User not found!")
     return success_response(posts, 200)
 
-@app.route("/user/<int:user_id>/following/posts/")
-def getFollowingPosts(user_id):
-    followingPosts = dao.getFollowingPosts(user_id)
-    if followingPosts is None:
-        return failure_response("User does not exist!")
-    return success_response(followingPosts)
-
-@app.route("/posts/tags/")
-def getPostsByTags():
-    body = json.loads(request.data)
-    tags = body.get("tags") # array of strings
-    posts = dao.getPostsByTags(tags=tags)
-    if posts is None:
-        return failure_response("Could not get posts with the specified tags!")
-    return success_response(posts)
-
 
 @app.route("/post/<int:post_id>/delete/", methods=["DELETE"])
 def deletePost(post_id):
@@ -242,8 +235,6 @@ def deletePost(post_id):
     if post is None:
         return failure_response("The server was not able to delete this post!")
     return success_response(post, 200)
-
-
 
 @app.route("/ratings/")
 def getAllRatings():
@@ -272,6 +263,9 @@ def rateOverall(post_id):
     if score < 0 or score > 5:
         return failure_response("The score must be in between 0 and 5!")
 
+    if dao.getPost(post_id) is None:
+    	return failure_response("That post was not found!")
+
     user_id = body.get("user_id")
     if user_id is None or score is None:
         return failure_response("No user_id or score provided!")
@@ -288,14 +282,26 @@ def getOverallRating(post_id):
         return failure_response("That post was not found!")
     return dao.getOverallRating(post_id)
 
+#can pass a list of tags, but not neccessary. 
+@app.route("/posts/popular/", methods=["POST"])
+def getPopularPostsbyTags():
+	body = json.loads(request.data)
+	tags = body.get("tags") 
+	return success_response(dao.getPopularPostsbyTags(tags),200)
 
 
+@app.route("/user/<int:user_id>/following/posts/", methods=["POST"])
+def getFollowingPostsByTags(user_id):
+    body = json.loads(request.data)
+    tags = body.get("tags") 
+    followingPosts = dao.getFollowingPostsByTags(user_id, tags)
+    if followingPosts is None:
+        return failure_response("User does not exist!")
+    return success_response(followingPosts, 200)
 
 
 #TODO
-
-#1. feed functionality 
-#2. authentication 
+#1. authentication 
 
 
 if __name__ == "__main__":
