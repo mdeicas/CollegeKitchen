@@ -225,6 +225,18 @@ def getPostsByUser(user_id):
         return failure_response("User not found!")
     return success_response(posts, 200)
 
+@app.route("/posts/filter/", methods=["POST"])
+def getPostsByFilters():
+    body = json.loads(request.data)
+    tags = body.get("tags")
+    price = body.get("price")
+    difficulty = body.get("difficulty")
+    if tags is None and price is None and difficulty is None:
+        return failure_response("No filters selected!")
+    posts = dao.getPostsByFilters(tags=tags, price=price, difficulty=difficulty)
+    if posts is None:
+        return failure_response("Could not get posts with the specified filters!")
+    return success_response(posts)
 
 @app.route("/post/<int:post_id>/delete/", methods=["DELETE"])
 def deletePost(post_id):
