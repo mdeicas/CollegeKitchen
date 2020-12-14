@@ -45,8 +45,8 @@ def getFollowersUsernames(user_id):
         return None
     return user.getFollowersUsernames()
 
-def getFollowingPostsByTags(user_id, tags):
-
+def getFollowingPostsByTags(user_id, **kwargs):
+    tags = kwargs.get("tags")
     price = kwargs.get("price")
     difficulty = kwargs.get("difficulty")
 
@@ -90,8 +90,9 @@ def getPostPopularity(post_id):
 
 	return popularity
 
-def getPopularPostsbyTags(tags):
+def getPopularPostsbyTags(**kwargs):
     posts = db.session.query(Post)
+    tags = kwargs.get("tags")
     price = kwargs.get("price")
     difficulty = kwargs.get("difficulty")
 
