@@ -42,17 +42,20 @@ class Asset(db.Model):
         self.create(kwargs.get("image_data")) # create image
 
     def serialize(self):
-        type_id = ""
         if self.img_type == "post":
-            type_id = self.post_id
-        elif self.img_type == "profile":
-            type_id = self.profile_id
+            return {
+            "image_id": self.id,
+            "img_type": self.img_type,
+            "type_id": self.post_id,
+            "url": f"{self.base_url}/{self.salt}.{self.extension}"
+        }
         return {
             "image_id": self.id,
             "img_type": self.img_type,
-            "type_id": type_id,
+            "type_id": self.profile_id,
             "url": f"{self.base_url}/{self.salt}.{self.extension}"
         }
+        
 
     def create(self, image_data):
         try:
@@ -251,7 +254,7 @@ class Post(db.Model):
             "comments": [c.serialize(view="post") for c in self.comments],
             "tags": self.trueTags(),
 
-            "photos": [p.serialize for p in self.photos]
+            "photos": [p.serialize() for p in self.photos]
         }
 
 
