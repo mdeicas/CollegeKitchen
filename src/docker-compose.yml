@@ -1,0 +1,7 @@
+version: '3'
+
+services:
+    collegeKitchen:
+      image: sophiateng02/collegekitchen
+      ports:
+          - "5000:5000"
