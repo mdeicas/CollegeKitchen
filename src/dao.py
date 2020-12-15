@@ -1,4 +1,4 @@
-from db import db, User, Post, Tag, Comment, Rating
+from db import db, User, Post, Tag, Comment, Rating, Asset
 from sqlalchemy import func
 import datetime
 

@@ -37,11 +37,11 @@ def upload_image():
     imgType = body.get("imgType")
     typeId = body.get("typeId")
     # no image data or image type
-    if (image_data is None or img_type is None):
+    if (imageData is None or imgType is None):
         return failure_response("No base64 URL to be found or no image type!")
     # incorrect image type
-    if img_type != "profile" and img_type != "recipe":
-        return failure_response(img_type)    
+    if imgType != "profile" and imgType != "recipe":
+        return failure_response(imgType)    
     if imgType == "profile":
         user = User.query.filter_by(id=typeId).first()
         if user is None:
