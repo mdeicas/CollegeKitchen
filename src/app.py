@@ -40,7 +40,7 @@ def upload_image():
     if (imageData is None or imgType is None):
         return failure_response("No base64 URL to be found or no image type!")
     # incorrect image type
-    if imgType != "profile" and imgType != "recipe":
+    if imgType != "profile" and imgType != "post":
         return failure_response(imgType)    
     if imgType == "profile":
         user = User.query.filter_by(id=typeId).first()

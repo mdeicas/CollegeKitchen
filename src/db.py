@@ -42,6 +42,7 @@ class Asset(db.Model):
         self.create(kwargs.get("image_data")) # create image
 
     def serialize(self):
+        type_id = ""
         if self.img_type == "post":
             type_id = self.post_id
         elif self.img_type == "profile":
